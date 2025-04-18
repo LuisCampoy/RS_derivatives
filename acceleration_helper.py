@@ -1,11 +1,11 @@
 # Recovery Score Calculations: Acceleration helper
 # Script created 3/25/2024
-# Last revision 12/3/2024
+# Last revision 4/9/202
 
 from numpy import sqrt
 #import pandas as pd
 
-def get_max_accelerations_x(selected_data_list) -> list[float]:
+def get_max_accelerations_x(roi_values_df) -> list[float]:
     ''' Create a list with the maximum absolute values 
         for each attempt   
 
@@ -19,13 +19,13 @@ def get_max_accelerations_x(selected_data_list) -> list[float]:
    
     amax_x_list:list[float] = []
         
-    for i in range (len (selected_data_list)):
-        amax_x:float = selected_data_list[i]['Acc_X'].abs().max()
-        amax_x_list.append(amax_x)
+    for _, row in roi_values_df.iterrows():
+        amax_x: float = row['Acc_X']
+        amax_x_list.append(abs(amax_x))
     
     return amax_x_list
 
-def get_max_accelerations_y(selected_data_list) -> list[float]:
+def get_max_accelerations_y(roi_values_df) -> list[float]:
     ''' Create a list with the maximum absolute values 
         for each attempt 
         
@@ -39,29 +39,28 @@ def get_max_accelerations_y(selected_data_list) -> list[float]:
    
     amax_y_list:list[float] = []
         
-    for i in range (len (selected_data_list)):
-        amax_y:float = selected_data_list[i]['Acc_Y'].abs().max()
-        amax_y_list.append(amax_y)
+    for _, row in roi_values_df.iterrows():
+        amax_y: float = row['Acc_Y']
+        amax_y_list.append(abs(amax_y))
     
     return amax_y_list
         
-def get_max_accelerations_z(selected_data_list) -> list[float]:
+def get_max_accelerations_z(roi_values_df) -> list[float]:
     ''' Create a list with the maximum absolute values for each attempt 
         for 'Acc_Z'
 
     Args:
-        selected_data_list: list with a list of dataframes. 
-        One per event with three columns (Acc_X, Acc_Y and Acc_Z)
+        roi_values_df: DataFrame with columns including 'Acc_Z'.
 
     Returns:
         list [float]
 
     '''
    
-    amax_z_list:list[float] = []
+    amax_z_list: list[float] = []
         
-    for i in range (len (selected_data_list)):
-        amax_z:float = selected_data_list[i]['Acc_Z'].abs().max()
+    for _, row in roi_values_df.iterrows():
+        amax_z: float = abs(row['Acc_Z'])
         amax_z_list.append(amax_z)
     
     return amax_z_list

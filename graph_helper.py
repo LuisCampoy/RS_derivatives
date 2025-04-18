@@ -1,12 +1,13 @@
 # Recovery Score Calculations: Graph_Helper Script
 # Script created  3/25/2024
-# Last revision 12/3/2024
+# Last revision 12/13/2024
 
-from types import NoneType
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import numpy as np
 import pandas as pd
+
+from numpy.typing import NDArray
 
 def plot_acceleration_data(df_filtered: pd.DataFrame, df_moving_avg: pd.DataFrame, df_kalman: pd.DataFrame) -> None:
     '''Plots three graphs for df_filtered, df_moving_avg, and df_kalman.
@@ -54,73 +55,70 @@ def plot_acceleration_data(df_filtered: pd.DataFrame, df_moving_avg: pd.DataFram
     plt.tight_layout()
     plt.show()
 
-def get_plot_sd_with_roi(df, regions_of_interest_sd, window_size, step_size, file_path) -> None:
-    '''Creates a plot of the Z axis only with the detected Regions of Interest
-    
+def get_plot_jerk_snap(jerk: np.ndarray, snap: np.ndarray, regions_indexes: list, df_avg: pd.DataFrame) -> None:
+    '''Plots jerk and snap
+
     Args:
-        df: list with the all the regions that have a standad deviation greater or equal to our threshold
-        regions_of_interest_sd: list with the regions of interest detected
-        window_size:
-        step_size: 
-        file_path: string with the name of the file
-
-    Returns:
-        None
+        jerk (np.ndarray): The first derivative of acceleration (jerk)
+        snap (np.ndarray): The second derivative of acceleration (snap)
+        regions_indexes: list: Indices of regions of interest
+        df_avg: provides TimeStamp list for the X axis
     '''
+    time_stamp = df_avg['timeStamp']
     
-    plt.figure(figsize=(10, 6))
-    plt.plot(
-    df['timeStamp'][0:],
-    df['Acc_X'][0:],
-    label= "Acc_X",
-    )
-    plt.plot(
-    df['timeStamp'][0:],
-    df['Acc_Y'][0:],
-    label= 'Acc_Y',
-    )
-    plt.plot(
-    df['timeStamp'][0:],
-    df['Acc_Z'][0:],
-    label= 'Acc_Z',
-    )
-
-    for k in range(len(regions_of_interest_sd)):
-        plt.vlines(
-            df['timeStamp'][regions_of_interest_sd[k][0] * step_size],
-            -30,
-            30,
-            colors= ['r'],
-            linestyles= 'dashed',
-            label= 'ROI',
-        )
-
-        plt.vlines(
-            df['timeStamp'][regions_of_interest_sd[k][0] * step_size + window_size],
-            -30,
-            30,
-            colors= ['r'],
-            linestyles= 'dashed',
-        )
-    plt.xlabel('timeStamp')
-    plt.ylabel('Accelerations (m/s^2)')
-    plt.title(file_path)
-    plt.grid(which='both')
+    # Adjust timeStamp to match the length of jerk and snap
+    timeStamp_jerk = time_stamp[:-1]
+    timeStamp_snap = time_stamp[:-2]
+    
+    # Plot size
+    plt.figure(figsize=(12, 6))
+    
+    # Jerk plot
+    plt.subplot(2, 1, 1)
+    plt.plot(timeStamp_jerk, jerk, label='Jerk', color='blue')
+    
+    # Convert timestamps to numerical values
+    #timeStamp_jerk_num = mdates.date2num(timeStamp_jerk)
+    
+    # Highlight ROIs
+    #for i in regions_indexes:
+    #   plt.axvspan(regions_indexes[i] - 0.5, regions_indexes[i] + 0.5, color='grey', alpha=0.3, label='ROI' if i == regions_indexes[0] else '')
+        
+    plt.axhline(0, color='gray', linestyle='--', linewidth=0.8)
+    plt.title('Jerk')
+    plt.xlabel('TimeStamp')
+    plt.ylabel('Jerk')
     plt.legend()
+    plt.grid(True)
+
+    # Snap plot
+    plt.subplot(2, 1, 2)
+    plt.plot(timeStamp_snap, snap, label='Snap', color='blue')
+    #plt.scatter(timeStamp_snap[roi_indices], snap[roi_indices], color="red", label="ROI", zorder=5)
+    plt.axhline(0, color='gray', linestyle='--', linewidth=0.8)
+    plt.title('Snap')
+    plt.xlabel('Time')
+    plt.ylabel('Snap')
+    plt.legend()
+    plt.grid(True)
+
+    # Show plot
+    plt.tight_layout()
     plt.show()
 
-def get_plot_jerk_snap_with_roi(jerk: np.ndarray, snap: np.ndarray, roi_indices: np.ndarray, timeStamp_avg_np) -> None:
+def get_plot_jerk_snap_with_roi(jerk: np.ndarray, snap: np.ndarray, regions_indexes: list, df: pd.DataFrame) -> None:
     '''Plots jerk and snap, highlighting regions of interest (ROIs).
 
     Args:
         jerk (np.ndarray): The first derivative of acceleration (jerk).
         snap (np.ndarray): The second derivative of acceleration (snap).
-        roi_indices (np.ndarray): Indices of regions of interest.
-        timeStamp (np.ndarray): Time array corresponding to jerk and snap.
+        regions_indexes: list: Indices of regions of interest.
+        df_avd: pd.DataFrame: Time array corresponding to jerk and snap.
     '''
-    # Adjust timeStamp to match the length of jerk and snap
-    timeStamp_jerk = timeStamp_avg_np[:-1]
-    timeStamp_snap = timeStamp_avg_np[:-2]
+    time_stamp_np: NDArray = np.array(df['timeStamp'], dtype=np.float64)
+     # Adjust timeStamp to match the length of jerk and snap
+    timeStamp_jerk = time_stamp_np[:-1]
+    timeStamp_snap = time_stamp_np[:-2]
     
     # Plot jerk
     plt.figure(figsize=(12, 6))
@@ -128,12 +126,12 @@ def get_plot_jerk_snap_with_roi(jerk: np.ndarray, snap: np.ndarray, roi_indices:
     # Jerk plot
     plt.subplot(2, 1, 1)
     plt.plot(timeStamp_jerk, jerk, label="Jerk", color="blue")
-    plt.scatter(timeStamp_jerk[roi_indices], jerk[roi_indices], color="red", label="ROI", zorder=5)
+    plt.scatter(timeStamp_jerk[regions_indexes], jerk, color="red", label="ROI", zorder=5)
     
     # Convert timestamps to numerical values
     #timeStamp_jerk_num = mdates.date2num(timeStamp_jerk)
-
-    #for i in roi_indices:
+    # Highlight ROIs
+    #for i in roi_indices['ROI_Indices']:
     #   plt.axvspan(float(timeStamp_jerk_num[i] - 0.5), float(timeStamp_jerk_num[i] + 0.5), color='grey', alpha=0.3, label="ROI" if i == roi_indices[0] else "")
         
     plt.axhline(0, color="gray", linestyle="--", linewidth=0.8)
@@ -146,7 +144,7 @@ def get_plot_jerk_snap_with_roi(jerk: np.ndarray, snap: np.ndarray, roi_indices:
     # Snap plot
     plt.subplot(2, 1, 2)
     plt.plot(timeStamp_snap, snap, label="Snap", color="blue")
-    plt.scatter(timeStamp_snap[roi_indices], snap[roi_indices], color="red", label="ROI", zorder=5)
+    #plt.scatter(timeStamp_snap[roi_indices], snap[roi_indices], color="red", label="ROI", zorder=5)
     plt.axhline(0, color="gray", linestyle="--", linewidth=0.8)
     plt.title("Snap with Highlighted ROIs")
     plt.xlabel("Time")
@@ -157,3 +155,51 @@ def get_plot_jerk_snap_with_roi(jerk: np.ndarray, snap: np.ndarray, roi_indices:
     # Show plot
     plt.tight_layout()
     plt.show()
+
+def get_plot_sd_with_roi(jerk:np.ndarray, df_avg:pd.DataFrame, roi_sd:list, window_size:int, step_size:int, file_path:str) -> None:
+    '''Creates a plot of the Z axis only with the detected Regions of Interest
+    
+    Args:
+        jerk: np.ndarray with the jerk values
+        df_avg: pd.DataFrame with the timeStamp and Acc_Z values
+        roi_sd: list with the regions of interest detected
+        window_size: int with the size of the window
+        step_size: int with the step size
+        file_path: string with the name of the file
+
+    Returns:
+        None
+    '''
+    time_stamp_np: NDArray = np.array(df_avg['timeStamp'])
+    # Adjust timeStamp to match the length of jerk and snap
+    timeStamp_jerk = time_stamp_np[:-1]
+    #timeStamp_snap = time_stamp_np[:-2]
+
+    plt.figure(figsize=(10, 6))
+    
+    plt.plot(timeStamp_jerk, jerk, label="Jerk", color="blue")
+    
+    for k in range(len(roi_sd)):
+        plt.vlines(
+            timeStamp_jerk[roi_sd[k][0] * step_size],
+            -1e-06,
+            1e-06,
+            colors= 'r',
+            linestyles= 'dashed',
+            label= 'ROI',
+        )
+
+        plt.vlines(
+            df_avg['timeStamp'][roi_sd[k][0] * step_size + window_size],
+            -1e-06,
+            1e-06,
+            colors=  'r',
+            linestyles= 'dashed',
+        )
+    plt.xlabel('timeStamp')
+    plt.ylabel('jerk')
+    plt.title(file_path)
+    plt.grid(which='both')
+    plt.legend()
+    plt.show()
+
